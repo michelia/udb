@@ -25,10 +25,12 @@ type DB struct {
 	slog ulog.Logger
 }
 
+// Table value 是json的表
 type Table struct {
 	*buntdb.DB
-	Pre  string // 即表名, 只是key的前缀
-	slog ulog.Logger
+	Pre         string // 即表名, 只是key的前缀
+	slog        ulog.Logger
+	DefautIndex string //  表默认的时间索引 字段是 updated
 }
 
 // Open
@@ -61,11 +63,19 @@ func Open(slog ulog.Logger, path string, autoShrinkMinSize int) *DB {
 // 参考: https://github.com/tidwall/buntdb/is/sues/47
 func (d *DB) New(tableName string) *Table {
 	slog := d.slog.With().Str("table", tableName).Logger()
-	return &Table{
-		DB:   d.DB,
-		Pre:  tableName + ":",
-		slog: &slog,
+	t := Table{
+		DB:          d.DB,
+		Pre:         tableName + ":",
+		slog:        &slog,
+		DefautIndex: tableName + ":index-updated",
 	}
+	err := t.DB.Update(func(tx Tx) error {
+		return tx.CreateIndex(t.DefautIndex, t.Pre+"*", IndexJSON("updated"))
+	})
+	if err != nil {
+		t.slog.Fatal().Err(err).Msg("can't CreateIndexUpdated")
+	}
+	return &t
 }
 
 func (t *Table) CreateIndex(name string, less ...func(a, b string) bool) {
@@ -74,16 +84,6 @@ func (t *Table) CreateIndex(name string, less ...func(a, b string) bool) {
 	})
 	if err != nil {
 		t.slog.Fatal().Err(err).Msg("can't CreateIndex: " + name)
-	}
-}
-
-// CreateIndexUpdated
-func (t *Table) CreateIndexUpdated() {
-	err := t.DB.Update(func(tx Tx) error {
-		return tx.CreateIndex(t.Pre+"index-updated", t.Pre+"*", IndexJSON("updated"))
-	})
-	if err != nil {
-		t.slog.Fatal().Err(err).Msg("can't CreateIndexUpdated")
 	}
 }
 
