@@ -70,7 +70,7 @@ func (d *DB) New(tableName string) *Table {
 
 func (t *Table) CreateIndex(name string, less ...func(a, b string) bool) {
 	err := t.DB.Update(func(tx Tx) error {
-		return tx.CreateIndex(t.Pre+name, t.Pre+"*", less...)
+		return tx.CreateIndex(t.Pre+"index-"+name, t.Pre+"*", less...)
 	})
 	if err != nil {
 		t.slog.Fatal().Err(err).Msg("can't CreateIndex: " + name)
@@ -80,7 +80,7 @@ func (t *Table) CreateIndex(name string, less ...func(a, b string) bool) {
 // CreateIndexUpdated
 func (t *Table) CreateIndexUpdated() {
 	err := t.DB.Update(func(tx Tx) error {
-		return tx.CreateIndex(t.Pre+"updated", t.Pre+"*", IndexJSON("updated"))
+		return tx.CreateIndex(t.Pre+"index-updated", t.Pre+"*", IndexJSON("updated"))
 	})
 	if err != nil {
 		t.slog.Fatal().Err(err).Msg("can't CreateIndexUpdated")
@@ -146,7 +146,7 @@ func (t *Table) Get(key string, v interface{}) error {
 	return nil
 }
 
-func (t *Table) GetRaw(key string) (*string, error) {
+func (t *Table) GetRaw(key string) (string, error) {
 	var val string
 	err := t.DB.View(func(tx Tx) error {
 		var err error
@@ -156,7 +156,19 @@ func (t *Table) GetRaw(key string) (*string, error) {
 		}
 		return nil
 	})
-	return &val, err
+	return val, err
+}
+
+func (t *Table) GetAll() ([]string, error) {
+	var vals []string
+	err := t.DB.View(func(tx Tx) error {
+		err := tx.Ascend(t.Pre+"index-updated", func(key, value string) bool {
+			vals = append(vals, value)
+			return true
+		})
+		return err
+	})
+	return vals, err
 }
 
 func (t *Table) GetFirst(index string, vi interface{}) error {
