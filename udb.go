@@ -174,11 +174,10 @@ func (t *Table) GetAll() ([]string, error) {
 func (t *Table) GetFirst(index string, vi interface{}) error {
 	var v *string
 	err := t.DB.View(func(tx Tx) error {
-		err := tx.Ascend(index, func(key, val string) bool {
+		return tx.Ascend(index, func(key, val string) bool {
 			v = &val
-			return false
+			return true
 		})
-		return err
 	})
 	if err != nil {
 		return err
@@ -190,11 +189,10 @@ func (t *Table) GetFirst(index string, vi interface{}) error {
 func (t *Table) GetLast(index string, vi interface{}) error {
 	var v *string
 	err := t.DB.View(func(tx Tx) error {
-		err := tx.Descend(index, func(key, val string) bool {
+		return tx.Descend(index, func(key, val string) bool {
 			v = &val
-			return false
+			return true
 		})
-		return err
 	})
 	if err != nil {
 		return err
