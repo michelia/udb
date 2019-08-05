@@ -182,6 +182,9 @@ func (t *Table) GetFirst(index string, vi interface{}) error {
 	if err != nil {
 		return err
 	}
+	if v == nil {
+		return ErrNotFound
+	}
 	err = json.Unmarshal([]byte(*v), vi)
 	return err
 }
@@ -196,6 +199,9 @@ func (t *Table) GetLast(index string, vi interface{}) error {
 	})
 	if err != nil {
 		return err
+	}
+	if v == nil {
+		return ErrNotFound
 	}
 	err = json.Unmarshal([]byte(*v), vi)
 	return err
