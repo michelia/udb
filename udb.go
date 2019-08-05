@@ -112,7 +112,7 @@ func (t *Table) Set(key string, v interface{}, ttl int) error {
 	if err != nil {
 		return err
 	}
-	err = t.SetRaw(t.Pre+key, string(val), ttl)
+	err = t.SetRaw(key, string(val), ttl)
 	return err
 }
 
