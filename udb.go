@@ -104,7 +104,7 @@ func (t *Table) SetRaw(key, val string, ttl int) error {
 	return err
 }
 
-// SetJSON 包含了json.Marshal
+// Set 包含了json.Marshal
 // v 必须是对象指针
 // ttl 单位是分钟
 func (t *Table) Set(key string, v interface{}, ttl int) error {
@@ -159,11 +159,11 @@ func (t *Table) GetRaw(key string) (string, error) {
 	return val, err
 }
 
-func (t *Table) GetAll() ([]string, error) {
-	var vals []string
+func (t *Table) GetAll() (map[string]string, error) {
+	var vals map[string]string
 	err := t.DB.View(func(tx Tx) error {
 		err := tx.Ascend(t.Pre+"index-updated", func(key, value string) bool {
-			vals = append(vals, value)
+			vals[key] = value
 			return true
 		})
 		return err
